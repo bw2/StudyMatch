@@ -469,18 +469,8 @@
   .bullet-list.is-empty { list-style: none; padding-left: 0; color: var(--text-faint); font-style: italic; }
 
   .study-detail-block { margin-bottom: 16px; }
-  .eligibility-card, .enroll-card { margin-bottom: 16px; }
+  .eligibility-card { margin-bottom: 16px; }
 
-  .confirm-check {
-    display: flex;
-    align-items: flex-start;
-    gap: 11px;
-    margin: 18px 0;
-    cursor: pointer;
-    font-size: 0.94rem;
-    max-width: 60ch;
-  }
-  .confirm-check input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--primary); flex-shrink: 0; }
 
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
   .field-row label, .field-full {
@@ -488,16 +478,6 @@
     font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 14px;
   }
 
-  .enroll-success {
-    display: flex; align-items: flex-start; gap: 10px;
-    background: var(--good-bg);
-    border: 1px solid var(--good);
-    border-radius: 10px;
-    padding: 13px 15px;
-    color: var(--text);
-    font-size: 0.9rem;
-  }
-  .enroll-success svg { width: 17px; height: 17px; color: var(--good); flex-shrink: 0; margin-top: 1px; }
 
   .official-link { display: inline-flex; margin-top: 16px; text-decoration: none; }
 
@@ -704,9 +684,8 @@
         <div class="toolbar card">
           <h2 class="toolbar-heading">Keywords</h2>
           <div class="keyword-controls">
-            <input type="text" id="keyword-input" list="keyword-list" autocomplete="off"
-                   placeholder="Type a keyword, e.g. Depression, MRI Scans, Menopause" />
-            <datalist id="keyword-list"></datalist>
+            <input type="text" id="keyword-input" autocomplete="off"
+                   placeholder="Search any word or phrase, e.g. insomnia, wearable, overnight" />
             <button type="button" class="btn btn-secondary" id="keyword-add">Add</button>
           </div>
           <p class="keyword-hint" id="keyword-hint"></p>
@@ -814,38 +793,14 @@
 
     <div class="card eligibility-card">
       <h2>Additional eligibility criteria</h2>
-      <p class="hint standalone">This study has more specific requirements beyond the initial screening. Review them and confirm you believe you're eligible.</p>
+      <p class="hint standalone">This study has more specific requirements beyond the initial screening.</p>
       <div class="detail-section"><h3>Conditions being studied</h3><ul class="bullet-list conditions-bullets"></ul></div>
       <div class="detail-section"><h3>Eligibility requirements</h3><ul class="bullet-list eligibility-bullets"></ul></div>
       <div class="detail-section"><h3>Test modalities used</h3><ul class="bullet-list modalities-bullets"></ul></div>
       <div class="detail-section"><h3>Exclusion criteria</h3><ul class="bullet-list exclusions-bullets"></ul></div>
-      <label class="confirm-check"><input type="checkbox" id="confirm-eligible" /><span>I've reviewed the criteria above and believe I'm eligible for this study.</span></label>
-      <button type="button" class="btn btn-primary" id="enroll-btn" disabled>Enroll</button>
+      <a class="btn btn-primary official-link" href="#" target="_blank" rel="noopener">Enroll</a>
     </div>
 
-    <div class="card enroll-card" id="enroll-card" hidden>
-      <h2>Ready to enroll</h2>
-      <p id="enroll-intro"></p>
-      <form id="enroll-form" hidden>
-        <div class="field-row">
-          <label>Your name<input type="text" id="enroll-name" required /></label>
-          <label>Your email<input type="email" id="enroll-email" required /></label>
-        </div>
-        <label class="field-full">Message to the study coordinator
-          <textarea id="enroll-message" rows="3" placeholder="I'm interested in participating and meet the criteria described..."></textarea>
-        </label>
-        <p class="hint standalone">Demo only &mdash; in the full product this would message the study coordinator. Nothing is sent from this prototype.</p>
-        <button type="submit" class="btn btn-primary">Send interest note</button>
-      </form>
-      <p class="enroll-success" id="enroll-success" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
-        <span>Your interest note is ready &mdash; in the full product this would go straight to the study coordinator.</span>
-      </p>
-      <a class="btn btn-secondary official-link" href="#" target="_blank" rel="noopener">
-        Open official study page
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
-      </a>
-    </div>
   </template>
 
   <!-- Embedded dataset (raw CSV, parsed at runtime) -->
@@ -2187,26 +2142,60 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
         ...raw, activities, organizations, therapeuticAreas, ageMin, ageMax, genders, compCash, compCoupon, compCategories,
         durationDays, durationBucket, conditionTags,
         isHealthyVolunteers: raw.healthy_volunteers === "TRUE",
+        // Every text field joined once, so keyword search covers the whole record.
+        // The url is excluded: it repeats the slug and the host on every study.
+        searchText: Object.entries(raw)
+          .filter(([field]) => field !== "url")
+          .map(([, value]) => value)
+          .join(" ")
+          .toLowerCase(),
       };
     }
 
+    // Shared by parseDuration and splitTimeCommitment. Hours and minutes matter
+    // because Rally writes efforts like "13 hours over 4 visits".
+    const TIME_UNIT_DAYS = {
+      minute: 1 / 1440, minutes: 1 / 1440, hour: 1 / 24, hours: 1 / 24,
+      day: 1, days: 1, week: 7, weeks: 7, month: 30, months: 30, year: 365, years: 365,
+    };
+    const COUNT_UNITS = new Set(["visit", "visits", "session", "sessions"]);
+
+    // Rally writes "<effort> over <span>", e.g. "13 hours over 4 visits" or
+    // "42 visits over 7 years". The second unit is sometimes a period of time
+    // and sometimes a count of visits, so the two are read separately.
     function parseDuration(raw) {
       if (!raw) return { days: null, bucket: "unclear" };
-      const TIME_UNIT_DAYS = { day: 1, days: 1, week: 7, weeks: 7, month: 30, months: 30, year: 365, years: 365 };
-      const match = raw.match(/^([\d.]+)\s+(\w+)\s+over\s+(?:([\d.]+)\s+(\w+)|null)$/i);
+      const match = raw.trim().match(/^([\d.]+)\s+(\w+)(?:\s+over\s+(?:([\d.]+)\s+(\w+)|null))?$/i);
       if (!match) return { days: null, bucket: "unclear" };
+
       const [, amt1, unit1, amt2, unit2] = match;
       const u1 = unit1.toLowerCase(), u2 = (unit2 || "").toLowerCase();
+      const n1 = Number(amt1), n2 = amt2 === undefined ? null : Number(amt2);
+
+      // How long the study runs, when a time unit is actually given.
       let days = null;
-      if (u2 && TIME_UNIT_DAYS[u2]) days = Number(amt2) * TIME_UNIT_DAYS[u2];
-      else if (TIME_UNIT_DAYS[u1]) days = Number(amt1) * TIME_UNIT_DAYS[u1];
+      if (u2 && TIME_UNIT_DAYS[u2]) days = n2 * TIME_UNIT_DAYS[u2];
+      else if (!u2 && TIME_UNIT_DAYS[u1]) days = n1 * TIME_UNIT_DAYS[u1];
+
+      // How many times the participant has to show up, when that is stated.
+      let visits = null;
+      if (u2 && COUNT_UNITS.has(u2)) visits = n2;
+      else if (!u2 && COUNT_UNITS.has(u1)) visits = n1;
+
       let bucket;
-      if (days === null) bucket = "single";
-      else if (days <= 1) bucket = "single";
-      else if (days <= 30) bucket = "short";
-      else if (days <= 180) bucket = "medium";
-      else bucket = "long";
+      if (visits !== null && visits > 1) bucket = days === null ? "unclear" : durationBucketFromDays(days);
+      else if (visits === 1 || (days !== null && days <= 1)) bucket = "single";
+      else if (days === null) bucket = "unclear";
+      else bucket = durationBucketFromDays(days);
+
       return { days, bucket };
+    }
+
+    function durationBucketFromDays(days) {
+      if (days <= 1) return "single";
+      if (days <= 30) return "short";
+      if (days <= 180) return "medium";
+      return "long";
     }
 
     function durationLabel(study) {
@@ -2234,8 +2223,6 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
     // Splits the source "<amount> <unit> over <amount> <unit>" text (e.g.
     // "42 visits over 7 years") into a calendar duration and a visit
     // frequency for the study detail page's stats.
-    const TIME_UNIT_DAYS = { day: 1, days: 1, week: 7, weeks: 7, month: 30, months: 30, year: 365, years: 365 };
-    const COUNT_UNITS = new Set(["visit", "visits", "session", "sessions"]);
     function splitTimeCommitment(study) {
       const raw = (study.estimated_time_commitment || "").trim();
       if (!raw || /^null\s+over\s+null$/i.test(raw)) return { duration: "Not specified", frequency: "Not specified" };
@@ -2539,31 +2526,19 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
     }
 
     /* ============ Listing view ============ */
-    // Keywords are the study's own therapeutic-area tags, matched exactly rather
-    // than by substring. Comparison is case-insensitive only.
+    // Free-text keywords, matched as a case-insensitive substring against every
+    // field of a study. searchText is prebuilt and lowercased in deriveStudy.
     let activeKeywords = [];
 
-    function keywordVocabulary() {
-      const counts = new Map();
-      loadStudies().forEach((s) => s.therapeuticAreas.forEach((a) => {
-        if (a) counts.set(a, (counts.get(a) || 0) + 1);
-      }));
-      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    function studyMatchesKeyword(study, term) {
+      return study.searchText.includes(term.trim().toLowerCase());
     }
 
-    function studyKeywords(s) { return s.therapeuticAreas.map((a) => a.trim().toLowerCase()); }
-
     function addKeyword(raw) {
-      const wanted = (raw || "").trim().toLowerCase();
-      if (!wanted) return;
-      const match = keywordVocabulary().find(([name]) => name.toLowerCase() === wanted);
-      const input = $("#keyword-input");
-      if (!match) {
-        $("#keyword-hint").textContent = `No study is tagged "${raw.trim()}". Pick one from the list.`;
-        return;
-      }
-      if (!activeKeywords.includes(match[0])) activeKeywords.push(match[0]);
-      input.value = "";
+      const term = (raw || "").trim().replace(/\s+/g, " ");
+      if (!term) return;
+      if (!activeKeywords.some((k) => k.toLowerCase() === term.toLowerCase())) activeKeywords.push(term);
+      $("#keyword-input").value = "";
       syncKeywordUI();
       renderListing();
     }
@@ -2583,29 +2558,14 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
         });
         wrap.appendChild(chip);
       });
-      const vocab = keywordVocabulary();
-      const tagged = loadStudies().filter((s) => s.therapeuticAreas.length).length;
       $("#keyword-hint").textContent = activeKeywords.length
-        ? "Showing studies tagged with any of the keywords above. Click one to remove it."
-        : `${vocab.length} keywords available. Only ${tagged} of ${loadStudies().length} studies carry keyword tags, so adding one narrows the list sharply.`;
+        ? "Showing studies matching any keyword above. Click one to remove it."
+        : "Type any word or phrase. It is matched anywhere in the study text, including title, summary, eligibility and conditions.";
     }
 
     function initListingControls() {
-      const list = $("#keyword-list");
-      list.innerHTML = "";
-      keywordVocabulary().forEach(([name, count]) => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.label = `${name} (${count})`;
-        list.appendChild(opt);
-      });
-
       const input = $("#keyword-input");
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(input.value); } });
-      // Picking from the datalist fires input, not keydown.
-      input.addEventListener("input", () => {
-        if (keywordVocabulary().some(([name]) => name.toLowerCase() === input.value.trim().toLowerCase())) addKeyword(input.value);
-      });
       $("#keyword-add").addEventListener("click", () => addKeyword(input.value));
 
       syncKeywordUI();
@@ -2625,8 +2585,7 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
 
       let matches = studies.filter((s) => matchStudy(s, screening, location));
       if (activeKeywords.length) {
-        const wanted = activeKeywords.map((k) => k.toLowerCase());
-        matches = matches.filter((s) => studyKeywords(s).some((k) => wanted.includes(k)));
+        matches = matches.filter((s) => activeKeywords.some((term) => studyMatchesKeyword(s, term)));
       }
       if (durationValue !== "any") matches = matches.filter((s) => s.durationBucket === durationValue);
 
@@ -2683,17 +2642,6 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       });
       function applySavedUI(btn, saved) { btn.classList.toggle("is-saved", saved); btn.setAttribute("aria-pressed", String(saved)); }
 
-      const checkbox = $("#confirm-eligible", root), enrollBtn = $("#enroll-btn", root), enrollCard = $("#enroll-card", root);
-      const enrollIntro = $("#enroll-intro", root), enrollForm = $("#enroll-form", root), enrollSuccess = $("#enroll-success", root);
-
-      checkbox.addEventListener("change", () => { enrollBtn.disabled = !checkbox.checked; });
-      enrollBtn.addEventListener("click", () => {
-        enrollCard.hidden = false;
-        enrollIntro.textContent = "This dataset doesn't include a direct coordinator email or phone number for this study, so you can send a demo interest note below, or go straight to the official Rally study page to see the real contact and enrollment steps.";
-        enrollForm.hidden = false;
-        enrollCard.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-      enrollForm.addEventListener("submit", (e) => { e.preventDefault(); enrollForm.hidden = true; enrollSuccess.hidden = false; });
     }
 
     /* ============ Saved view ============ */
