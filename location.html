@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyMatch &mdash; Your Location</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">&#128300;</span>
+        <span class="brand-name">StudyMatch</span>
+      </a>
+      <a class="saved-link" href="saved.html">&#9825; <span id="saved-count">Saved</span></a>
+    </header>
+
+    <nav class="stepper" aria-label="Progress">
+      <a class="step is-done" href="index.html">1. Screening</a>
+      <span class="step-sep">&rsaquo;</span>
+      <span class="step is-active">2. Location</span>
+      <span class="step-sep">&rsaquo;</span>
+      <span class="step">3. Matches</span>
+    </nav>
+
+    <main>
+      <p class="tagline">Where should we look? We'll estimate distance to each study's site so you can filter out ones that are too far.</p>
+
+      <form id="location-form" class="card" novalidate>
+        <fieldset class="question">
+          <legend>Your address, city, or town</legend>
+          <div class="field">
+            <input
+              type="text"
+              id="address"
+              name="address"
+              placeholder="e.g., Cambridge, MA"
+              required
+            />
+          </div>
+          <p class="hint standalone">This prototype matches New England towns near MGB study sites &mdash; it isn't a full geocoder.</p>
+          <button type="button" class="btn-secondary" id="use-current-location">&#128205; Use my current location</button>
+          <p class="error" id="error-address" role="alert"></p>
+        </fieldset>
+
+        <fieldset class="question">
+          <legend>Maximum distance you're willing to travel</legend>
+          <div class="field radio-group" role="radiogroup">
+            <label class="radio-pill">
+              <input type="radio" name="maxDistance" value="10" />
+              <span>10 mi</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="maxDistance" value="25" required />
+              <span>25 mi</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="maxDistance" value="50" />
+              <span>50 mi</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="maxDistance" value="100" />
+              <span>100 mi</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="maxDistance" value="any" />
+              <span>Any distance</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="submit-row submit-row--split">
+          <a href="index.html" class="btn-secondary">&larr; Back</a>
+          <button type="submit" class="btn-primary">See My Matches</button>
+        </div>
+      </form>
+    </main>
+
+    <footer class="page-footer">
+      <p>Your location is only used in your browser to estimate distance &mdash; it isn't sent anywhere.</p>
+    </footer>
+  </div>
+
+  <script src="js/state.js"></script>
+  <script src="js/location.js"></script>
+</body>
+</html>

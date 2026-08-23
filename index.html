@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyMatch &mdash; Find Paid Research Studies</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">&#128300;</span>
+        <span class="brand-name">StudyMatch</span>
+      </div>
+      <a class="saved-link" href="saved.html">&#9825; <span id="saved-count">Saved</span></a>
+    </header>
+
+    <nav class="stepper" aria-label="Progress">
+      <span class="step is-active">1. Screening</span>
+      <span class="step-sep">&rsaquo;</span>
+      <span class="step">2. Location</span>
+      <span class="step-sep">&rsaquo;</span>
+      <span class="step">3. Matches</span>
+    </nav>
+
+    <main>
+      <p class="tagline">Answer a few quick questions and we'll find research studies you may be eligible for &mdash; many pay cash, gift cards, or other compensation.</p>
+
+      <form id="screening-form" class="card" novalidate>
+        <div class="progress" aria-hidden="true">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <!-- Age -->
+        <fieldset class="question">
+          <legend>How old are you?</legend>
+          <div class="field">
+            <input
+              type="number"
+              id="age"
+              name="age"
+              min="0"
+              max="119"
+              inputmode="numeric"
+              placeholder="Age in years"
+              required
+            />
+          </div>
+          <p class="error" id="error-age" role="alert"></p>
+        </fieldset>
+
+        <!-- Gender -->
+        <fieldset class="question">
+          <legend>What is your gender?</legend>
+          <div class="field">
+            <input
+              type="text"
+              id="gender"
+              name="gender"
+              placeholder="e.g., Woman, Man, Nonbinary, Transgender Man"
+              required
+            />
+          </div>
+          <p class="error" id="error-gender" role="alert"></p>
+        </fieldset>
+
+        <!-- BMI -->
+        <fieldset class="question">
+          <legend>What is your BMI? <span class="hint">(optional)</span></legend>
+          <div class="field">
+            <input
+              type="number"
+              id="bmi"
+              name="bmi"
+              min="10"
+              max="70"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="e.g., 24.5"
+            />
+          </div>
+          <p class="error" id="error-bmi" role="alert"></p>
+        </fieldset>
+
+        <!-- Race -->
+        <fieldset class="question">
+          <legend>What is your race? <span class="hint">(optional)</span></legend>
+          <div class="field">
+            <select id="race" name="race">
+              <option value="" selected>Select one&hellip;</option>
+              <option value="American Indian or Alaska Native">American Indian or Alaska Native</option>
+              <option value="Asian">Asian</option>
+              <option value="Black or African American">Black or African American</option>
+              <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander</option>
+              <option value="White">White</option>
+              <option value="Two or More Races">Two or More Races</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+          <p class="error" id="error-race" role="alert"></p>
+        </fieldset>
+
+        <!-- Imaging -->
+        <fieldset class="question">
+          <legend>Are you open to MRI, CT, or other imaging tests?</legend>
+          <div class="field radio-group" role="radiogroup" aria-labelledby="error-imaging">
+            <label class="radio-pill">
+              <input type="radio" name="imaging" value="yes" required />
+              <span>Yes</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="imaging" value="no" />
+              <span>No</span>
+            </label>
+          </div>
+          <p class="error" id="error-imaging" role="alert"></p>
+        </fieldset>
+
+        <!-- Invasive / blood -->
+        <fieldset class="question">
+          <legend>Are you open to blood tests or other invasive tests?</legend>
+          <div class="field radio-group" role="radiogroup" aria-labelledby="error-invasive">
+            <label class="radio-pill">
+              <input type="radio" name="invasive" value="yes" required />
+              <span>Yes</span>
+            </label>
+            <label class="radio-pill">
+              <input type="radio" name="invasive" value="no" />
+              <span>No</span>
+            </label>
+          </div>
+          <p class="error" id="error-invasive" role="alert"></p>
+        </fieldset>
+
+        <!-- Conditions of interest -->
+        <fieldset class="question">
+          <legend>Which conditions are you interested in? <span class="hint">(select all that apply)</span></legend>
+          <div class="field checkbox-group" id="conditions-group">
+            <label class="checkbox-pill">
+              <input type="checkbox" name="condition" value="mental_cognitive" />
+              <span>Mental &amp; Cognitive</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" name="condition" value="cardiovascular" />
+              <span>Cardiovascular</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" name="condition" value="womens_health" />
+              <span>Women's Health</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" name="condition" value="eye" />
+              <span>Eye</span>
+            </label>
+            <label class="checkbox-pill">
+              <input type="checkbox" name="condition" value="cancer" />
+              <span>Cancer</span>
+            </label>
+            <label class="checkbox-pill checkbox-pill--all">
+              <input type="checkbox" name="condition" value="all" id="condition-all" />
+              <span>All</span>
+            </label>
+          </div>
+          <p class="error" id="error-condition" role="alert"></p>
+        </fieldset>
+
+        <div class="submit-row">
+          <button type="submit" class="btn-primary">Continue</button>
+        </div>
+      </form>
+    </main>
+
+    <footer class="page-footer">
+      <p>Your answers are stored only on this device and used to match you with studies.</p>
+    </footer>
+  </div>
+
+  <script src="js/state.js"></script>
+  <script src="js/screening.js"></script>
+</body>
+</html>

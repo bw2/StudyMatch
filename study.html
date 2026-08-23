@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StudyMatch &mdash; Study Details</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="page-header">
+      <a class="brand" href="index.html">
+        <span class="brand-mark" aria-hidden="true">&#128300;</span>
+        <span class="brand-name">StudyMatch</span>
+      </a>
+      <a class="saved-link" href="saved.html">&#9825; <span id="saved-count">Saved</span></a>
+    </header>
+
+    <a href="listing.html" class="back-link" id="back-link">&larr; Back to matches</a>
+
+    <main id="study-main">
+      <p id="loading-state">Loading study&hellip;</p>
+    </main>
+  </div>
+
+  <template id="study-detail-template">
+    <div class="card study-detail">
+      <div class="detail-head">
+        <h1 class="detail-title"></h1>
+        <button type="button" class="save-btn save-btn--large" aria-pressed="false" aria-label="Save study">&#9825;</button>
+      </div>
+      <p class="detail-org"></p>
+      <div class="detail-tags"></div>
+
+      <div class="detail-stats">
+        <div class="stat">
+          <span class="stat-label">Compensation</span>
+          <span class="stat-value stat-comp"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Time commitment</span>
+          <span class="stat-value stat-duration"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Ages</span>
+          <span class="stat-value stat-age"></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Activities involved</span>
+          <span class="stat-value stat-activities"></span>
+        </div>
+      </div>
+
+      <section class="detail-section">
+        <h2>About this study</h2>
+        <p class="detail-summary"></p>
+      </section>
+
+      <section class="detail-section">
+        <h2>What you may be asked to do</h2>
+        <p class="detail-tasks"></p>
+      </section>
+    </div>
+
+    <div class="card eligibility-card">
+      <h2>Additional eligibility criteria</h2>
+      <p class="hint standalone">This study has more specific requirements beyond the initial screening. Review them and confirm you believe you're eligible.</p>
+
+      <div class="detail-section" id="eligibility-block">
+        <h3>You may qualify if&hellip;</h3>
+        <p class="detail-eligibility"></p>
+      </div>
+
+      <div class="detail-section" id="exclusions-block">
+        <h3>You may NOT qualify if&hellip;</h3>
+        <p class="detail-exclusions"></p>
+      </div>
+
+      <label class="confirm-check">
+        <input type="checkbox" id="confirm-eligible" />
+        <span>I've reviewed the criteria above and believe I'm eligible for this study.</span>
+      </label>
+
+      <button type="button" class="btn-primary" id="enroll-btn" disabled>Enroll</button>
+    </div>
+
+    <div class="card enroll-card" id="enroll-card" hidden>
+      <h2>Ready to enroll</h2>
+      <p id="enroll-intro"></p>
+
+      <form id="enroll-form" hidden>
+        <div class="field-row">
+          <label>
+            Your name
+            <input type="text" id="enroll-name" required />
+          </label>
+          <label>
+            Your email
+            <input type="email" id="enroll-email" required />
+          </label>
+        </div>
+        <label class="field-full">
+          Message to the study coordinator
+          <textarea id="enroll-message" rows="3" placeholder="I'm interested in participating and meet the criteria described..."></textarea>
+        </label>
+        <p class="hint standalone">Demo only &mdash; in the full product this would message the study coordinator. Nothing is sent from this prototype.</p>
+        <button type="submit" class="btn-primary">Send interest note</button>
+      </form>
+
+      <p class="enroll-success" id="enroll-success" hidden>&#9989; Your interest note is ready &mdash; in the full product this would go straight to the study coordinator.</p>
+
+      <a class="btn-secondary" id="official-link" href="#" target="_blank" rel="noopener">Open official study page &#8599;</a>
+    </div>
+  </template>
+
+  <script src="js/csv-parser.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/study.js"></script>
+</body>
+</html>
