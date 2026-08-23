@@ -35,7 +35,7 @@
     --primary-contrast: #FFFFFF;
     --primary-wash: #E8F1FF;
     /* Money figures need to stay readable on white, so this is a darkened amber. */
-    --gold: #9A6A00;
+    --gold: #FFB800;
     --gold-wash: #FFF3D6;
     --good: #17924A;
     --good-bg: #E7F8EE;
@@ -367,6 +367,8 @@
 
   .study-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -374,13 +376,14 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .study-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
-  .study-card-link { display: block; padding: 18px 18px 16px; color: inherit; text-decoration: none; }
+  .study-card-link { display: flex; flex-direction: column; flex: 1; padding: 18px 18px 16px; color: inherit; text-decoration: none; }
 
   .study-title { font-family: var(--font-body); font-weight: 700; margin: 0 36px 6px 0; font-size: 1rem; line-height: 1.35; }
   .study-org { display: flex; align-items: center; gap: 5px; margin: 0 0 12px; color: var(--text-muted); font-size: 0.83rem; }
   .study-org svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--text-faint); }
 
   .study-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .study-tags:empty { margin-bottom: 0; }
   .tag {
     background: var(--surface-2);
     border: 1px solid var(--border);
@@ -392,7 +395,7 @@
   }
   .tag--good { color: var(--good); border-color: var(--good); background: var(--good-bg); }
 
-  .study-meta { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 12px; }
+  .study-meta { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; }
   .meta-comp { font-family: var(--font-mono); font-weight: 600; color: var(--gold); font-size: 1rem; font-variant-numeric: tabular-nums; }
   .meta-duration { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 0.8rem; }
   .meta-duration svg { width: 13px; height: 13px; }
@@ -569,6 +572,15 @@
   .brand-study { color: var(--text); }
   .brand-match { color: var(--primary); }
   .brand-word { letter-spacing: -0.01em; }
+  
+  .keyword-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .keyword-controls input { flex: 1 1 300px; font: inherit; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text); }
+  .keyword-hint { font-size: 12.5px; color: var(--text-faint); margin: 8px 0 0; }
+  .chip.chip--keyword { display: inline-flex; align-items: center; gap: 7px; }
+  .chip.chip--keyword .chip-x { font-size: 15px; line-height: 1; opacity: .65; }
+  .chip.chip--keyword:hover .chip-x { opacity: 1; }
   </style>
 </head>
 <body>
@@ -690,17 +702,15 @@
       <!-- ===================== LISTING ===================== -->
       <section class="view" id="view-listing">
         <div class="toolbar card">
-          <h2 class="toolbar-heading">Conditions</h2>
-          <div class="chip-row" id="condition-filters" role="group" aria-label="Filter by condition">
-            <button type="button" class="chip" data-condition="mental_cognitive">Mental &amp; Cognitive</button>
-            <button type="button" class="chip" data-condition="cardiovascular">Cardiovascular</button>
-            <button type="button" class="chip" data-condition="womens_health">Women's Health</button>
-            <button type="button" class="chip" data-condition="eye">Eye</button>
-            <button type="button" class="chip" data-condition="cancer">Cancer</button>
-            <button type="button" class="chip" data-condition="sleep">Sleep</button>
-            <button type="button" class="chip" data-condition="mobility">Mobility</button>
-            <button type="button" class="chip chip--all is-active" data-condition="all">All</button>
+          <h2 class="toolbar-heading">Keywords</h2>
+          <div class="keyword-controls">
+            <input type="text" id="keyword-input" list="keyword-list" autocomplete="off"
+                   placeholder="Type a keyword, e.g. Depression, MRI Scans, Menopause" />
+            <datalist id="keyword-list"></datalist>
+            <button type="button" class="btn btn-secondary" id="keyword-add">Add</button>
           </div>
+          <p class="keyword-hint" id="keyword-hint"></p>
+          <div class="chip-row" id="keyword-chips" role="group" aria-label="Active keywords"></div>
           <div class="toolbar-row">
             <label class="select-label">Duration
               <select id="duration-filter">
@@ -2529,26 +2539,79 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
     }
 
     /* ============ Listing view ============ */
-    let activeConditions = new Set(["all"]);
-    function initListingControls() {
-      const bar = $("#condition-filters");
-      bar.addEventListener("click", (e) => {
-        const chip = e.target.closest(".chip");
-        if (!chip) return;
-        const value = chip.dataset.condition;
-        if (value === "all") activeConditions = new Set(["all"]);
-        else {
-          activeConditions.delete("all");
-          if (activeConditions.has(value)) activeConditions.delete(value); else activeConditions.add(value);
-          if (activeConditions.size === 0) activeConditions = new Set(["all"]);
-        }
-        syncChipUI();
-        renderListing();
+    // Keywords are the study's own therapeutic-area tags, matched exactly rather
+    // than by substring. Comparison is case-insensitive only.
+    let activeKeywords = [];
+
+    function keywordVocabulary() {
+      const counts = new Map();
+      loadStudies().forEach((s) => s.therapeuticAreas.forEach((a) => {
+        if (a) counts.set(a, (counts.get(a) || 0) + 1);
+      }));
+      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    }
+
+    function studyKeywords(s) { return s.therapeuticAreas.map((a) => a.trim().toLowerCase()); }
+
+    function addKeyword(raw) {
+      const wanted = (raw || "").trim().toLowerCase();
+      if (!wanted) return;
+      const match = keywordVocabulary().find(([name]) => name.toLowerCase() === wanted);
+      const input = $("#keyword-input");
+      if (!match) {
+        $("#keyword-hint").textContent = `No study is tagged "${raw.trim()}". Pick one from the list.`;
+        return;
+      }
+      if (!activeKeywords.includes(match[0])) activeKeywords.push(match[0]);
+      input.value = "";
+      syncKeywordUI();
+      renderListing();
+    }
+
+    function syncKeywordUI() {
+      const wrap = $("#keyword-chips");
+      wrap.innerHTML = "";
+      activeKeywords.forEach((name) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip chip--keyword is-active";
+        chip.innerHTML = `<span>${name}</span><span class="chip-x">&times;</span>`;
+        chip.addEventListener("click", () => {
+          activeKeywords = activeKeywords.filter((k) => k !== name);
+          syncKeywordUI();
+          renderListing();
+        });
+        wrap.appendChild(chip);
       });
+      const vocab = keywordVocabulary();
+      const tagged = loadStudies().filter((s) => s.therapeuticAreas.length).length;
+      $("#keyword-hint").textContent = activeKeywords.length
+        ? "Showing studies tagged with any of the keywords above. Click one to remove it."
+        : `${vocab.length} keywords available. Only ${tagged} of ${loadStudies().length} studies carry keyword tags, so adding one narrows the list sharply.`;
+    }
+
+    function initListingControls() {
+      const list = $("#keyword-list");
+      list.innerHTML = "";
+      keywordVocabulary().forEach(([name, count]) => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.label = `${name} (${count})`;
+        list.appendChild(opt);
+      });
+
+      const input = $("#keyword-input");
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addKeyword(input.value); } });
+      // Picking from the datalist fires input, not keydown.
+      input.addEventListener("input", () => {
+        if (keywordVocabulary().some(([name]) => name.toLowerCase() === input.value.trim().toLowerCase())) addKeyword(input.value);
+      });
+      $("#keyword-add").addEventListener("click", () => addKeyword(input.value));
+
+      syncKeywordUI();
       $("#duration-filter").addEventListener("change", renderListing);
       $("#sort-by").addEventListener("change", renderListing);
     }
-    function syncChipUI() { $$(".chip", $("#condition-filters")).forEach((chip) => chip.classList.toggle("is-active", activeConditions.has(chip.dataset.condition))); }
 
     function renderListing() {
       const screening = State.getScreening();
@@ -2557,12 +2620,14 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
 
       const grid = $("#listing-grid"), summary = $("#results-summary"), empty = $("#listing-empty");
       const studies = loadStudies();
-      const filterConditions = Array.from(activeConditions);
       const durationValue = $("#duration-filter").value;
       const sortValue = $("#sort-by").value;
 
       let matches = studies.filter((s) => matchStudy(s, screening, location));
-      if (!filterConditions.includes("all")) matches = matches.filter((s) => s.conditionTags.some((t) => filterConditions.includes(t)));
+      if (activeKeywords.length) {
+        const wanted = activeKeywords.map((k) => k.toLowerCase());
+        matches = matches.filter((s) => studyKeywords(s).some((k) => wanted.includes(k)));
+      }
       if (durationValue !== "any") matches = matches.filter((s) => s.durationBucket === durationValue);
 
       matches = matches.map((study) => ({ study, nearest: location && location.lat != null ? nearestOrg(study, location.lat, location.lon) : null }));
