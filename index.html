@@ -360,10 +360,10 @@
 
   .results-summary {
     color: var(--text-muted);
-    font-size: 0.92rem;
-    margin: 0 0 16px;
+    font-size: 1.08rem;
+    margin: 0 0 20px;
   }
-  .results-summary strong { font-family: var(--font-mono); color: var(--text); font-size: 1rem; }
+  .results-summary strong { font-family: var(--font-mono); color: var(--text); font-size: 1.18rem; }
 
   .empty-state { color: var(--text-muted); text-align: center; padding: 52px 20px; }
   .empty-state a { color: var(--primary); font-weight: 700; text-decoration: none; }
@@ -384,37 +384,37 @@
   .study-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
   .study-card-link { display: flex; flex-direction: column; flex: 1; padding: 18px 18px 16px; color: inherit; text-decoration: none; }
 
-  .study-title { font-family: var(--font-body); font-weight: 700; margin: 0 36px 6px 0; font-size: 1rem; line-height: 1.35; }
-  .study-org { display: flex; align-items: center; gap: 5px; margin: 0 0 12px; color: var(--text-muted); font-size: 0.83rem; }
-  .study-org svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--text-faint); }
+  .study-title { font-family: var(--font-body); font-weight: 700; margin: 0 48px 9px 0; font-size: 1.18rem; line-height: 1.4; }
+  .study-org { display: flex; align-items: center; gap: 7px; margin: 0 0 15px; color: var(--text-muted); font-size: 0.96rem; }
+  .study-org svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
 
-  .study-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .study-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 17px; }
   .study-tags:empty { margin-bottom: 0; }
   .tag {
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text-muted);
-    font-size: 0.74rem;
+    font-size: 0.84rem;
     font-weight: 600;
-    padding: 3px 9px;
+    padding: 5px 11px;
     border-radius: 999px;
   }
   .tag--good { color: var(--good); border-color: var(--good); background: var(--good-bg); }
 
-  .study-meta { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; }
-  .meta-comp { font-family: var(--font-mono); font-weight: 600; color: var(--gold); font-size: 1rem; font-variant-numeric: tabular-nums; }
-  .meta-duration { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 0.8rem; }
-  .meta-duration svg { width: 13px; height: 13px; }
+  .study-meta { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--border); padding-top: 16px; margin-top: auto; }
+  .meta-comp { font-family: var(--font-mono); font-weight: 700; color: var(--good); font-size: 1.22rem; font-variant-numeric: tabular-nums; }
+  .meta-duration { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.94rem; }
+  .meta-duration svg { width: 16px; height: 16px; }
 
   .save-btn {
     position: absolute;
-    top: 13px;
-    right: 13px;
+    top: 16px;
+    right: 16px;
     background: var(--surface);
     border: 1px solid var(--border);
     color: var(--text-faint);
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 999px;
     cursor: pointer;
     display: flex;
@@ -422,7 +422,7 @@
     justify-content: center;
     z-index: 1;
   }
-  .save-btn svg { width: 16px; height: 16px; }
+  .save-btn svg { width: 19px; height: 19px; }
   .save-btn.is-saved { color: var(--saved-red); border-color: var(--saved-red); }
   .save-btn--large { position: static; width: 38px; height: 38px; flex-shrink: 0; }
   .save-btn--large svg { width: 18px; height: 18px; }
@@ -679,7 +679,7 @@
   .toolbar { padding: 23px; border-top: 4px solid var(--primary); }
   .toolbar-heading { color: var(--primary); }
   .results-summary { padding-left: 3px; }
-  .study-grid { gap: 18px; }
+  .study-grid { gap: 22px; }
   #listing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .study-card {
     overflow: hidden;
@@ -688,7 +688,7 @@
   }
   .study-card::before { position: absolute; inset: 0 auto 0 0; width: 4px; background: linear-gradient(var(--primary), var(--brand-cyan)); content: ""; }
   .study-card:hover { transform: translateY(-3px); }
-  .study-card-link { padding: 20px 20px 18px 23px; }
+  .study-card-link { padding: 24px 24px 22px 27px; }
   .tag { background: var(--primary-wash); border-color: transparent; }
   .tag--good { background: var(--good-bg); border-color: transparent; }
   .study-meta { border-top-style: dashed; }
