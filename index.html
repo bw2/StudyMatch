@@ -623,16 +623,6 @@
     font-size: 0.98rem;
     font-weight: 400;
   }
-  .view-kicker {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--primary);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
   .card {
     border-color: color-mix(in srgb, var(--border) 86%, var(--primary) 14%);
     border-radius: 22px;
@@ -654,21 +644,6 @@
   #view-screening { max-width: 900px; margin: 0 auto; }
   .view-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
   .view-heading-copy { min-width: 0; }
-  .time-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    flex: 0 0 auto;
-    margin-top: 12px;
-    padding: 8px 12px;
-    color: var(--primary-strong);
-    background: var(--primary-wash);
-    border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-  .time-badge svg { width: 15px; height: 15px; }
   #view-screening > .progress-track { height: 6px; margin: 0 0 15px; background: var(--surface-2); }
   #view-screening > .progress-track .progress-fill { background: linear-gradient(90deg, var(--primary), var(--brand-cyan)); }
   #screening-form {
@@ -732,7 +707,6 @@
     #screening-form .question:nth-of-type(n + 3),
     #screening-form .row-actions { grid-column: 1; }
     .view-heading-row { display: block; }
-    .time-badge { margin: 0 0 16px; }
     .toolbar-row { align-items: stretch; }
     #listing-grid { grid-template-columns: 1fr; }
     .select-label { flex: 1 1 100%; }
@@ -834,14 +808,9 @@
       <section class="view" id="view-screening">
         <div class="view-heading-row">
           <div class="view-heading-copy">
-            <span class="view-kicker">Your study profile</span>
-            <h1 class="view-title">Tell us about you</h1>
-            <p class="view-sub">A few quick questions help us find studies that fit your age, location, and preferences.</p>
+            <h1 class="view-title">A few quick questions</h1>
+            <p class="view-sub">To help match you with studies</p>
           </div>
-          <span class="time-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-            About 1 minute
-          </span>
         </div>
         <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="screening-progress"></div></div>
 
