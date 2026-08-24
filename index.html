@@ -571,10 +571,7 @@
   /* ---------- Style-guide alignment ---------- */
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 2% 5%, rgba(30, 144, 255, 0.15) 0 145px, transparent 146px),
-      radial-gradient(circle at 98% 94%, rgba(0, 194, 255, 0.12) 0 175px, transparent 176px),
-      linear-gradient(145deg, var(--bg) 0%, var(--surface) 52%, var(--bg) 100%);
+    background: linear-gradient(145deg, var(--bg) 0%, var(--surface) 52%, var(--bg) 100%);
     background-attachment: fixed;
   }
 
@@ -682,17 +679,6 @@
     background: linear-gradient(145deg, var(--primary-strong), var(--brand-blue-600) 62%, var(--brand-cyan));
     content: "";
     transform: rotate(-6deg);
-  }
-  .hero::after {
-    position: absolute;
-    z-index: -1;
-    bottom: -105px;
-    left: -85px;
-    width: 250px;
-    height: 250px;
-    border: 34px solid rgba(0, 194, 255, 0.11);
-    border-radius: 50%;
-    content: "";
   }
   .hero-copy { position: relative; z-index: 1; max-width: 610px; padding-right: 34px; }
   .hero-eyebrow { margin-bottom: 13px; letter-spacing: 0.08em; }
@@ -857,6 +843,7 @@
   .toolbar-heading { color: var(--primary); }
   .results-summary { padding-left: 3px; }
   .study-grid { gap: 18px; }
+  #listing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .study-card {
     overflow: hidden;
     border-radius: 18px;
@@ -907,6 +894,7 @@
     .view-heading-row { display: block; }
     .time-badge { margin: 0 0 16px; }
     .toolbar-row { align-items: stretch; }
+    #listing-grid { grid-template-columns: 1fr; }
     .select-label { flex: 1 1 100%; }
     .select-label select { width: 100%; }
     .edit-search { margin-top: 4px; }
