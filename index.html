@@ -976,7 +976,7 @@
       <section class="detail-section">
         <h2>About the Study</h2>
         <p class="detail-about"></p>
-        <a class="btn btn-secondary official-link" href="#" target="_blank" rel="noopener">
+        <a class="btn btn-secondary official-link study-link" href="#" target="_blank" rel="noopener">
           View official study page
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
         </a>
@@ -990,7 +990,7 @@
       <div class="detail-section"><h3>Eligibility requirements</h3><ul class="bullet-list eligibility-bullets"></ul></div>
       <div class="detail-section"><h3>Test modalities used</h3><ul class="bullet-list modalities-bullets"></ul></div>
       <div class="detail-section"><h3>Exclusion criteria</h3><ul class="bullet-list exclusions-bullets"></ul></div>
-      <a class="btn btn-primary official-link" href="#" target="_blank" rel="noopener">Enroll</a>
+      <a class="btn btn-primary official-link enroll-link" href="#" target="_blank" rel="noopener">Enroll</a>
     </div>
 
   </template>
@@ -2215,6 +2215,7 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       "Dana Farber Cancer Institute": [42.3376, -71.1069],
       "MGB Community Physicians Locations": [42.3629, -71.0692],
     };
+    const HOSPITAL_NAMES_RE = new RegExp(Object.keys(HOSPITAL_COORDS).join("|"), "gi");
 
     const CITY_COORDS = {
       boston: [42.3601, -71.0589], cambridge: [42.3736, -71.1097], somerville: [42.3876, -71.0995],
@@ -2267,8 +2268,9 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       }
       const t = text.toLowerCase();
       let best = null;
+      // Whole-token match only, so "Andover" does not resolve to Dover NH.
       for (const [city, coords] of Object.entries(CITY_COORDS)) {
-        if (t.includes(city) && (!best || city.length > best.city.length)) best = { city, coords };
+        if (new RegExp(`(^|[^a-z-])${city}([^a-z-]|$)`).test(t) && (!best || city.length > best.city.length)) best = { city, coords };
       }
       return best ? { lat: best.coords[0], lon: best.coords[1] } : null;
     }
@@ -2291,6 +2293,11 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       sleep: ["sleep disorder", "sleep apnea", "insomnia", "narcolepsy", "circadian", "restless leg"],
       mobility: ["mobility", "gait", "balance", "fall risk", "rehabilitat", "physical therapy", "movement disorder", "orthopedic", "spinal cord injury", "amputat"],
     };
+    // Matched on a leading word boundary, so "eye" does not fire on "surveyed"
+    // and "balance" does not fire on "imbalances".
+    const CONDITION_PATTERNS = Object.fromEntries(
+      Object.entries(CONDITION_KEYWORDS).map(([key, keywords]) => [key, keywords.map((kw) => new RegExp("\\b" + kw))])
+    );
     const COMP_CATEGORY_LABELS = { payment: "Cash payment", giftCard: "Gift card", meal: "Meal provided", other: "Other compensation", none: "No compensation" };
 
     let _studiesCache = null;
@@ -2326,12 +2333,15 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       const genders = (raw.genders || "").split(",").map((s) => s.trim()).filter(Boolean);
       const compCash = raw.compensation_cash_usd ? Number(raw.compensation_cash_usd) : 0;
       const compCoupon = raw.compensation_coupon_usd ? Number(raw.compensation_coupon_usd) : 0;
+      const compTotal = raw.compensation_total_usd ? Number(raw.compensation_total_usd) : 0;
       const compCategories = (raw.compensation_categories || "").split(",").map((s) => s.trim()).filter(Boolean);
       const { days: durationDays, bucket: durationBucket } = parseDuration(raw.estimated_time_commitment);
-      const haystack = (therapeuticAreas.join(" ") + " " + raw.title + " " + raw.summary).toLowerCase();
-      const conditionTags = Object.keys(CONDITION_KEYWORDS).filter((key) => CONDITION_KEYWORDS[key].some((kw) => haystack.includes(kw)));
+      // Hospital names are stripped first: nearly every summary names one, and
+      // "Brigham and Women's Hospital" would otherwise tag the study Women's Health.
+      const haystack = (therapeuticAreas.join(" ") + " " + raw.title + " " + raw.summary).replace(HOSPITAL_NAMES_RE, " ").toLowerCase();
+      const conditionTags = Object.keys(CONDITION_PATTERNS).filter((key) => CONDITION_PATTERNS[key].some((re) => re.test(haystack)));
       return {
-        ...raw, activities, organizations, therapeuticAreas, ageMin, ageMax, genders, compCash, compCoupon, compCategories,
+        ...raw, activities, organizations, therapeuticAreas, ageMin, ageMax, genders, compCash, compCoupon, compTotal, compCategories,
         durationDays, durationBucket, conditionTags,
         isHealthyVolunteers: raw.healthy_volunteers === "TRUE",
         // Only the text a reader actually sees on the study detail page, so a
@@ -2348,7 +2358,6 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
           raw.age_display,
           raw.genders,
           raw.eligibility,
-          raw.exclusions,
           raw.therapeutic_areas,
           raw.activities_may_be_required,
         ].join(" ").toLowerCase(),
@@ -2378,16 +2387,17 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       // How long the study runs, when a time unit is actually given.
       let days = null;
       if (u2 && TIME_UNIT_DAYS[u2]) days = n2 * TIME_UNIT_DAYS[u2];
-      else if (!u2 && TIME_UNIT_DAYS[u1]) days = n1 * TIME_UNIT_DAYS[u1];
+      else if (TIME_UNIT_DAYS[u1]) days = n1 * TIME_UNIT_DAYS[u1];
 
       // How many times the participant has to show up, when that is stated.
       let visits = null;
       if (u2 && COUNT_UNITS.has(u2)) visits = n2;
       else if (!u2 && COUNT_UNITS.has(u1)) visits = n1;
 
+      // Only an explicit count of one proves a single visit; a few hours of
+      // effort says nothing about how many trips it is spread across.
       let bucket;
-      if (visits !== null && visits > 1) bucket = days === null ? "unclear" : durationBucketFromDays(days);
-      else if (visits === 1 || (days !== null && days <= 1)) bucket = "single";
+      if (visits === 1) bucket = "single";
       else if (days === null) bucket = "unclear";
       else bucket = durationBucketFromDays(days);
 
@@ -2395,10 +2405,19 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
     }
 
     function durationBucketFromDays(days) {
-      if (days <= 1) return "single";
       if (days <= 30) return "short";
-      if (days <= 180) return "medium";
+      if (days < 180) return "medium";
       return "long";
+    }
+
+    // age_display is often blank while age_min/age_max (what matchStudy filters
+    // on) are set, so the label is built from the numbers in that case.
+    function ageLabel(study) {
+      if (study.age_display) return study.age_display;
+      if (study.ageMin !== null && study.ageMax !== null) return `${study.ageMin}-${study.ageMax} years`;
+      if (study.ageMin !== null) return `${study.ageMin} years or older`;
+      if (study.ageMax !== null) return `${study.ageMax} years or younger`;
+      return "Any age";
     }
 
     function durationLabel(study) {
@@ -2455,18 +2474,22 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       const t = (text || "").trim();
       if (!t) return [];
       if (t.includes("·")) return t.split("·").map((s) => s.trim()).filter(Boolean);
+      if (t.includes("•")) return t.split("•").map((s) => s.trim()).filter(Boolean);
       if (t.includes("\n")) return t.split("\n").map((s) => s.trim()).filter(Boolean);
       const sentences = t.split(/(?<=[.!?])\s+(?=[A-Z0-9])/).map((s) => s.trim()).filter(Boolean);
       return sentences.length > 1 ? sentences : [t];
     }
 
-    function compensationValue(study) { return study.compCash || study.compCoupon || 0; }
+    function compensationValue(study) { return study.compCash || study.compCoupon || study.compTotal || 0; }
     function compensationLabel(study) {
       const parts = [];
       if (study.compCash) parts.push(`$${study.compCash.toLocaleString()} cash`);
       if (study.compCoupon) parts.push(`$${study.compCoupon.toLocaleString()} gift card`);
       if (parts.length) return parts.join(" + ");
-      if (study.compCategories.length && !study.compCategories.includes("none")) return study.compCategories.map((c) => COMP_CATEGORY_LABELS[c] || c).join(", ");
+      // Some studies record the amount only as a total, with no cash/coupon split.
+      if (study.compTotal) return `$${study.compTotal.toLocaleString()} total`;
+      if (study.compCategories.includes("none")) return COMP_CATEGORY_LABELS.none;
+      if (study.compCategories.length) return study.compCategories.map((c) => COMP_CATEGORY_LABELS[c] || c).join(", ");
       return "Not specified";
     }
 
@@ -2503,13 +2526,13 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       }
       if (screening && screening.gender && !GENDER_NO_FILTER.has(screening.gender) && study.genders.length) {
         const wanted = GENDER_MAP[screening.gender] || [screening.gender];
-        const ok = wanted.some((g) => study.genders.includes(g)) || study.genders.includes("Other Genders");
+        const ok = wanted.some((g) => study.genders.includes(g));
         if (!ok) return false;
       }
       if (screening && screening.healthyVolunteer && study.healthy_volunteers === "FALSE") return false;
       if (location && location.lat != null && location.maxDistance && location.maxDistance !== "any") {
         const dist = nearestDistanceMiles(study, location.lat, location.lon);
-        if (dist !== null && dist > Number(location.maxDistance)) return false;
+        if (dist === null || dist > Number(location.maxDistance)) return false;
       }
       return true;
     }
@@ -2826,11 +2849,13 @@ functionaldyspepsia,Functional Dyspepsia Research Contact Database,https://rally
       $(".stat-frequency", node).textContent = timeCommitment.frequency;
 
       $(".detail-about", node).textContent = aboutStudyText(study);
-      $$(".official-link", node).forEach((a) => (a.href = study.url || "#"));
+      $(".study-link", node).href = study.url || "#";
+      // Some studies enroll through their own form rather than the Rally page.
+      $(".enroll-link", node).href = study.external_signup_url || study.url || "#";
 
       const eligibilityBullets = [
-        `Ages: ${study.age_display || "Any age"}`,
-        `Sex/gender: ${study.genders.length ? study.genders.join(", ") : "All genders"}`,
+        `Ages: ${ageLabel(study)}`,
+        `Sex/gender: ${study.genders.length ? study.genders.join(", ") : "Not specified"}`,
         ...splitToBullets(study.eligibility),
       ];
       renderBullets($(".conditions-bullets", node), study.therapeuticAreas, "No specific conditions listed for this study.");
